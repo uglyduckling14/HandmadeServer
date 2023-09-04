@@ -6,56 +6,71 @@
 
 ### Architecture:
 
-Should follow lesson 1.4
+Server -> passes Bytes -> Encoder
+Encoder -> passes Request Obj -> Server
+Server -> sends request -> Router
+Router -> sends request -> Endpoint
+Endpoint -> sends response -> Router
+Router -> sends response -> Server
+Server -> sends response -> Encoder
+Encoder -> returns bytes -> Server
 
 ### Parsing:
 
 Implement a socket and turn bytes into data using parse/request.
 
-Example:
-
-class Request:
-    def __init__(
-        self,
-        method, #string
-        uri, #string
-        version, #string
-        text, #string
-        headers, #dict, the keys are the header names and values are the header values
-    ):
-        self.method = method
-        self.uri = uri
-        self.version = version
-        self.text = text
-        self.headers = headers
-
 Middleware will return response.
-
-Example:
-
-class Response:
-    def __init__(
-            self,
-            version, #string
-            code, #number
-            reason, #string
-            headers, #dict, the keys are the header names and values are the header values 
-            text, #string
-    ):
-        self.version = version
-        self.code = code
-        self.reason = reason
-        self.headers = headers
-        self.text = text
 
 Parser will turn response into valid HTTP string
 
-Example:
+### Pseudocode
 
-HTTP/1.1 200 OK
-Content-Type: text/html
-Content-Length: 575
-Connection: close
-Cache-Control: no-cache
-Server: Joseph's Server
-Date: 2023-07-19 18:53:53.844846+00:00
+Static files:
+    .js
+        will print something to console
+    .css
+        will style html files
+Templates:
+    index
+        * css
+        * links
+        * name
+        * purpose
+        * js
+    about
+        * about yourself
+        * css
+    experience
+        * last three jobs + time
+    projects page
+        * 3 programming projects
+server:
+    receives request-> convert to request object
+    request object-> sent to middleware
+    middleware -> parse to response
+    return response string
+    send response as bytes
+response:
+    contains version, code, reason, headers, text
+    headers:
+        servername
+        date
+        connection: 
+        cache-control
+        content length
+        content-type mime types
+        location: only for 301 responses
+request:
+    contains headers, text, method, uri and version
+middleware:
+    must be in middlware factory style
+    logs request/response
+    gets specific files by name
+        - send correct content-type header
+    call endpoint that belongs to uri
+        return endpoint
+        else
+            return endpoint not found
+endpoint:
+    fetch file belonging to each uri
+
