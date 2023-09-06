@@ -3,12 +3,44 @@ import socket, datetime
 from request import Request
 from response import Response
 
+
+def response1(file):
+    if('html' in file):
+        response_text = f'templates{file}'
+    else:
+        response_text = f'{file[1:]}'
+    MIME_Type = file.split('.')
+    try:
+        with open(response_text, 'r', encoding='UTF-8') as file:
+            content = file.read()
+            file.close()
+            response = Response(
+                version="HTTP/1.1",
+                code=200,
+                reason="OK",
+                headers={
+                    "Date": datetime.datetime.now(),
+                    "Content-Type": f"text/{MIME_Type[1]}",
+                    "Server": "Esper Server",
+                    "Connection": "close",
+                    "Cache-Control": "max-age=1"
+                },
+                text=content
+            )
+            return response
+    except FileNotFoundError as e:
+        print(f"Error occurred: {e}")
+        return None
+    
 def parser(request):
     lines = request.split(b'\r\n')
     request_line = lines[0].decode("UTF-8")
+    print(request_line)
     method, uri, version = request_line.split(' ')
     if(uri == '/'):
         uri = '/index.html'
+    elif('static' in uri):
+        pass
     else:
         uri+= '.html'
     headers = {}
@@ -21,6 +53,7 @@ def parser(request):
         key, value = line.split(': ', 1)
         headers[key] = value
     text = b'\r\n'.join(lines[text_start:])
+
     return Request(method, uri, version, text, headers)
 
 def middleware_request(next):
@@ -58,7 +91,7 @@ def router(uri):
                 text= html
             )
     elif '.' in uri:
-        res = response(uri)
+        res = response1(uri)
         if(res == None):
             res = Response(
                 version="HTTP/1.1",
@@ -104,30 +137,6 @@ def encode_response(response):
 
     return http_response
 
-def response(file):
-    response_text = f'templates{file}'
-    try:
-        with open(response_text, 'r', encoding='UTF-8') as file:
-            content = file.read()
-            file.close()
-            response = Response(
-            version="HTTP/1.1",
-            code=200,
-            reason="OK",
-            headers={
-                "Date": datetime.datetime.now(),
-                "Content-Type": "text/html",
-                "Server": "Esper Server",
-                "Connection": "close",
-                "Cache-Control": "max-age=1"
-            },
-            text=content
-        )
-            return response
-    except FileNotFoundError as e:
-        print(f"Error occurred: {e}")
-        return None
-
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.bind(("127.0.0.1", 8000))
     s.listen()
@@ -137,12 +146,16 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         connection, addr = s.accept()
         with connection:
             data = connection.recv(8192)
-
+            if not data:
+                connection.close()
+                continue    
             request = parser(data)
-
+            
             middleware_chain = middleware_request(middleware_response)
             response = middleware_chain(request)
+
             connection.send(bytes(response, "UTF-8"))
-            break
-    s.close()
+         
+            
+    
 

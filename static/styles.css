@@ -1,0 +1,21 @@
+
+
+body{
+    background-color:rgb(2, 2, 59);
+}
+h1{
+    color:aliceblue;
+}
+ul{
+    background-color:aliceblue;
+}
+p{
+    color:aliceblue;
+}
+span{
+    color:aliceblue;
+}
+main{
+    display: flex;
+    justify-content: space-between;
+}
